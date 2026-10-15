@@ -16,9 +16,9 @@ import java.util.Properties;
 
 /**
  * Settings, stored at config/mobvolume.properties.
- * Volumes are percentages, 0 (silent) to {@link #MAX} (twice as loud), at three levels: the whole mob, one kind of
- * sound of that mob, and one single sound. A sound plays at mob x type x sound, so a zombie at 50% with its hurt
- * sounds at 50% is hurt at 25%. Anything not in the file is at 100%.
+ * Volumes are percentages, 0 (silent) to {@link #MAX} (twice as loud), at four levels: a category of mobs, the
+ * whole mob, one kind of sound of that mob, and one single sound. A sound plays at category x mob x type x sound,
+ * so a zombie at 50% with its hurt sounds at 50% is hurt at 25%. Anything not in the file is at 100%.
  */
 public final class MobVolumeConfig {
     public static final int MAX = 200;
@@ -26,6 +26,7 @@ public final class MobVolumeConfig {
 
     public boolean enabled = true;
 
+    private final Map<MobGroup, Integer> groups = new EnumMap<>(MobGroup.class);
     private final Map<String, Integer> mobs = new HashMap<>();
     private final Map<String, EnumMap<SoundType, Integer>> types = new HashMap<>();
     /** Keyed by sound event id, e.g. "minecraft:entity.zombie.ambient". */
@@ -41,6 +42,10 @@ public final class MobVolumeConfig {
         return instance;
     }
 
+    public int volume(MobGroup group) {
+        return groups.getOrDefault(group, DEFAULT);
+    }
+
     public int volume(String mob) {
         return mobs.getOrDefault(mob, DEFAULT);
     }
@@ -52,6 +57,15 @@ public final class MobVolumeConfig {
 
     public int soundVolume(String sound) {
         return sounds.getOrDefault(sound, DEFAULT);
+    }
+
+    public void setVolume(MobGroup group, int percent) {
+        percent = clamp(percent);
+        if (percent == DEFAULT) {
+            groups.remove(group);
+        } else {
+            groups.put(group, percent);
+        }
     }
 
     public void setVolume(String mob, int percent) {
@@ -85,9 +99,10 @@ public final class MobVolumeConfig {
     }
 
     /** Volume multiplier for one sound of this mob: 1 = unchanged, 0 = silent, 2 = twice as loud. */
-    public float factor(String mob, SoundType type, String sound) {
+    public float factor(MobGroup group, String mob, SoundType type, String sound) {
         if (!enabled) return 1.0f;
-        return volume(mob) * volume(mob, type) / (float) (DEFAULT * DEFAULT) * soundVolume(sound) / DEFAULT;
+        return volume(group) / (float) DEFAULT * volume(mob) / DEFAULT * volume(mob, type) / DEFAULT
+            * soundVolume(sound) / DEFAULT;
     }
 
     /** True if anything about this mob (given all of its sounds) has been changed. */
@@ -107,6 +122,11 @@ public final class MobVolumeConfig {
         return false;
     }
 
+    /** Back to 100% for the category only (its mobs keep their own settings). */
+    public void reset(MobGroup group) {
+        groups.remove(group);
+    }
+
     /** Back to 100% for the mob, all its kinds of sound and all its sounds. */
     public void reset(String mob, Collection<String> mobSounds) {
         mobs.remove(mob);
@@ -121,6 +141,7 @@ public final class MobVolumeConfig {
     }
 
     public void resetAll() {
+        groups.clear();
         mobs.clear();
         types.clear();
         sounds.clear();
@@ -156,7 +177,10 @@ public final class MobVolumeConfig {
             } catch (NumberFormatException e) {
                 continue;
             }
-            if (key.startsWith("sound.")) {
+            if (key.startsWith("category.")) {
+                MobGroup group = MobGroup.byKey(key.substring("category.".length()));
+                if (group != null) setVolume(group, percent);
+            } else if (key.startsWith("sound.")) {
                 setSoundVolume(key.substring("sound.".length()), percent);
             } else if (key.startsWith("volume.")) {
                 // volume.<mob> or volume.<mob>/<type>
@@ -175,6 +199,7 @@ public final class MobVolumeConfig {
     public void save() {
         Properties p = new Properties();
         p.setProperty("enabled", Boolean.toString(enabled));
+        groups.forEach((group, v) -> p.setProperty("category." + group.key, Integer.toString(v)));
         mobs.forEach((mob, v) -> p.setProperty("volume." + mob, Integer.toString(v)));
         types.forEach((mob, map) -> map.forEach((type, v) ->
             p.setProperty("volume." + mob + "/" + type.key, Integer.toString(v))));

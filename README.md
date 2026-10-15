@@ -1,19 +1,20 @@
 # Mob Sound Volume
 
-Her mobun sesini ayrı ayrı ayarla: tamamen kapalıdan (%0) iki kat yükseğe (%200) kadar. İstersen bir mobun ses türlerini ve her bir sesini de ayrı ayrı ayarlayabilirsin.
+Her mobun sesini ayrı ayrı ayarla: tamamen kapalıdan (%0) iki kat yükseğe (%200) kadar. Moblar kategorilere ayrılmıştır (düşman, boss, hayvan, su canlısı...), bir kategorinin tamamını tek kaydırıcıyla ayarlayabilirsin. İstersen bir mobun ses türlerini ve her bir sesini de ayrı ayrı ayarlayabilirsin.
 
-*English: A client-side Fabric mod for Minecraft 26.1.2 and 26.2 that sets the volume of every mob separately (0–200%), with optional separate volumes for its idle, hurt, death, step and other sounds.*
+*English: A client-side Fabric mod for Minecraft 26.1.2 and 26.2 that sets the volume of every mob separately (0–200%). Mobs are sorted into categories (hostile, bosses, animals, water creatures...) that each have their own volume, and every mob's idle, hurt, death, step and other sounds can be set separately too.*
 
 ## Özellikler
 
+- **Kategoriler:** Moblar sekiz kategoriye ayrılır: düşman yaratıklar, bosslar (Ender Ejderi, Wither, Warden, Yaşlı Gardiyan), hayvanlar, su canlıları, köylüler, golemler ve yardımcılar (Demir Golem, Kar Golemi, Bakır Golem, Allay), oyuncu ve diğerleri, birçok mobun ortak sesleri. Her kategorinin kendi kaydırıcısı vardır, ör. düşman yaratıklar %30 ise hepsi daha sessiz olur. Kategoriler kapalı başlar, yanındaki **+** düğmesi içindeki mobları açar. Modlu moblar oyunun kendi sınıflandırmasına göre (canavar, yaratık, su canlısı...) doğru kategoriye girer.
 - **Mob başına ses seviyesi:** Listedeki her mob için %0 (kapalı) ile %200 arası bir kaydırıcı.
 - **Ses türüne göre ayar:** Bir mobun yanındaki **+** düğmesiyle açılır: normal sesler, hasar, ölüm, adım, hareket (zıplama, yüzme, uçma...), saldırı, yeme-içme ve diğer.
 - **Her ses ayrı:** Bir türün yanındaki **+** o türdeki her sesi kendi kaydırıcısıyla gösterir. Sesler oyunun kendi altyazı adlarıyla yazılır ("Zombi inler", "Zırhçı çalışır"...); aynı altyazıya sahip sesler (ör. yedi kurt türünün havlaması) tek satırdır.
-- **Üç seviye çarpılır:** Gerçek ses seviyesi mob × tür × ses olarak hesaplanır ve her satırda gösterilir, ör. zombi %60, normal sesler %100 ve "Zombi inler" %25 ise inleme %15 çalar.
+- **Dört seviye çarpılır:** Gerçek ses seviyesi kategori × mob × tür × ses olarak hesaplanır ve her satırda gösterilir, ör. düşman yaratıklar %100, zombi %60, normal sesler %100 ve "Zombi inler" %25 ise inleme %15 çalar. Kategorinin sıfırlama düğmesi kategoriyi ve içindeki bütün mobları %100'e döndürür.
 - **Son duyulanlar:** Son 2 dakikada sesi gelen moblar listenin en üstünde ♪ işaretiyle durur. Rahatsız eden bir ses duyunca menüyü aç, mob en üstte.
 - **Sesi dinle (♪):** Her satırda ayarlanan seviyede bir örnek ses çalar. Yanındaki ok düğmesi o satırı %100'e döndürür.
 - **Canlı uygulama:** Kaydırıcıyı oynatırken çalmakta olan sesler de hemen değişir. Tuşla oyun içinde açıldığında tek oyunculu oyunu durdurmaz, etraftaki mobların sesinin değiştiğini duyabilirsin.
-- **Arama:** Mob adına, kimliğine (ör. `zombie`) veya ses adına göre arama. Ses adıyla aranınca (ör. "çalışır") eşleşen sesler hemen açılır gelir.
+- **Arama:** Mob adına, kimliğine (ör. `zombie`) veya ses adına göre arama. Arama sonuçları kategorilerinin altında açık gelir; ses adıyla aranınca (ör. "çalışır") eşleşen sesler de hemen açılır.
 - **Kapalı mob altyazı göstermez:** %0'daki bir mobun sesi hiç başlatılmaz.
 - **Gerçek yükseltme:** %100 üstü sesi gerçekten yükseltir (OpenAL'ın 1.0 kazanç sınırı o ses için kaldırılır), duyulma mesafesi değişmez.
 - **Modlu moblar:** Diğer modların mobları da kendiliğinden listeye girer. Hem `<mod>:entity.<mob>.<ses>` hem de `entity.` olmadan yazılan `<mod>:<mob>_<ses>` (ör. `grizzly_bear_idle`) biçimleri tanınır.
@@ -35,7 +36,7 @@ Bazı moblar oyunun kendisinde başka bir mobun seslerini kullanır, bu yüzden 
 - Mooshroom'un normal sesleri → İnek sesleri
 - Balıkların yüzme sesi (`entity.fish.swim`) hiçbir moba ait değil
 
-"Birçok mobun ortak sesleri" bölümündeki **Genel** (yeme, su, patlama...) ve **Düşman moblar (ortak)** grupları birçok mobun paylaştığı sesleri kapsar.
+"Birçok mobun ortak sesleri" kategorisindeki **Genel** (yeme, su, patlama...) ve **Düşman moblar (ortak)** grupları birçok mobun paylaştığı sesleri kapsar; bu sesler tek bir moba ait olmadığı için düşman yaratıklar veya hayvanlar kategorisinin ayarından etkilenmez.
 
 ## Gereksinimler
 
@@ -58,7 +59,7 @@ Bu Minecraft 26.1.2 jar'ını üretir. 26.2 için:
 gradlew build -Pmc=26.2
 ```
 
-Hazır jar'lar `build/libs/` klasörüne çıkar (`-sources` olmayan dosya), adında Minecraft sürümü yazar: `mobvolume-<sürüm>+26.1.2.jar` ve `mobvolume-<sürüm>+26.2.jar`. Oyununun sürümüne uyanı kur. `gradlew build` ayrıca `src/test` altındaki JUnit testlerini de çalıştırır.
+Hazır jar'lar `build/libs/` klasörüne çıkar (`-sources` olmayan dosya), adında Minecraft sürümü yazar: `mobvolume-<sürüm>+26.1.2.jar` ve `mobvolume-<sürüm>+26.2.jar`. Oyununun sürümüne uyanı kur. Her derleme jar'ı ayrıca ana klasördeki `builds/<minecraft sürümü>/` klasörüne kopyalar ve oradaki eski sürümünü siler; ana klasördeki `build-all.bat` bütün modları her sürüm için tek seferde derler. `gradlew build` ayrıca `src/test` altındaki JUnit testlerini de çalıştırır.
 
 ### Desteklenen Minecraft sürümleri
 
@@ -70,10 +71,11 @@ Her sürümün bağımlılık sürümleri `versions/<minecraft>.properties` dosy
 src/main/java/mobvolume/
   MobVolumeMod.java              giriş noktası, tuş ataması, Müzik ve Sesler menüsündeki düğme
   SoundClassifier.java           ses adından mobu ve ses türünü bulur (oyundan bağımsız, test edilebilir)
-  SoundType.java                 ses türleri: normal, hasar, ölüm, adım, diğer
+  SoundType.java                 ses türleri: normal, hasar, ölüm, adım, hareket, saldırı, yeme, diğer
+  MobGroup.java                  mob kategorileri (düşman, boss, hayvan, su canlısı...)
   MobVolumeConfig.java           ayarlar (config/mobvolume.properties)
   MobSounds.java                 oyunun sesleri ile ayarları birleştirir, mob listesini çıkarır
-  client/MobVolumeScreen.java    ayarlar ekranı (mob > tür > ses)
+  client/MobVolumeScreen.java    ayarlar ekranı (kategori > mob > tür > ses)
   client/ui/                     ayar ekranı iskeleti; üç modda aynıdır, ekranlar aynı görünür
   mixin/SoundEngineMixin.java    her mob sesinin seviyesini çarpar, kapalı sesleri başlatmaz
   mixin/ChannelMixin.java        %100 üstü için OpenAL kazanç sınırını kaldırır
@@ -89,10 +91,11 @@ Dil dosyalarına yazı eklerken `LangFilesTest` her dilin İngilizce ile aynı a
 
 ## Ayar dosyası
 
-`config/mobvolume.properties`, yüzde olarak. Sadece değiştirilenler yazılır, gerisi %100'dür:
+`config/mobvolume.properties`, yüzde olarak. Sadece değiştirilenler yazılır, gerisi %100'dür. Kategori anahtarları: `hostile`, `boss`, `animal`, `water`, `villager`, `golem`, `other`, `shared`.
 
 ```
 enabled=true
+category.hostile=30
 volume.minecraft\:zombie=50
 volume.minecraft\:zombie/hurt=0
 volume.minecraft\:cow/ambient=20

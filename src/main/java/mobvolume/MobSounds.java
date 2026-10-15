@@ -34,6 +34,7 @@ public final class MobSounds {
     private static final Map<Identifier, Optional<SoundClassifier.Match>> MATCHES = new ConcurrentHashMap<>();
     private static final Map<String, Long> LAST_HEARD = new ConcurrentHashMap<>();
     private static final Map<Identifier, Long> LAST_HEARD_SOUND = new ConcurrentHashMap<>();
+    private static final Map<String, MobGroup> CATEGORIES = new ConcurrentHashMap<>();
 
     private static final SoundClassifier.Entities ENTITIES = new SoundClassifier.Entities() {
         @Override
@@ -58,6 +59,18 @@ public final class MobSounds {
         return BuiltInRegistries.ENTITY_TYPE.getValue(key);
     }
 
+    /** The category a mob is listed under (and whose volume applies to it). */
+    public static MobGroup category(String mob) {
+        return CATEGORIES.computeIfAbsent(mob, id -> {
+            EntityType<?> type = isGroup(id) ? null : entityType(id);
+            return MobGroup.of(id, type == null ? null : type.getCategory().getName());
+        });
+    }
+
+    private static float factor(SoundClassifier.Match m, Identifier sound) {
+        return MobVolumeConfig.get().factor(category(m.mob()), m.mob(), m.type(), sound.toString());
+    }
+
     public static SoundClassifier.@Nullable Match match(Identifier sound) {
         return MATCHES.computeIfAbsent(sound,
             s -> Optional.ofNullable(SoundClassifier.classify(s.toString(), ENTITIES))).orElse(null);
@@ -68,7 +81,7 @@ public final class MobSounds {
         try {
             Identifier id = instance.getIdentifier();
             SoundClassifier.Match m = match(id);
-            return m == null ? 1.0f : MobVolumeConfig.get().factor(m.mob(), m.type(), id.toString());
+            return m == null ? 1.0f : factor(m, id);
         } catch (Throwable t) {
             MobVolumeMod.logOnce(t);
             return 1.0f;
@@ -90,8 +103,7 @@ public final class MobSounds {
                 LAST_HEARD_SOUND.put(id, now);
             }
             // looping sounds (a bee's buzz) are started silently instead, so they come back when turned up again
-            return !(instance instanceof TickableSoundInstance)
-                && MobVolumeConfig.get().factor(m.mob(), m.type(), id.toString()) <= 0;
+            return !(instance instanceof TickableSoundInstance) && factor(m, id) <= 0;
         } catch (Throwable t) {
             MobVolumeMod.logOnce(t);
             return false;
@@ -133,8 +145,8 @@ public final class MobSounds {
         }
     }
 
-    /** A mob (or shared group) and all of its sounds, by type. */
-    public record MobInfo(String id, Component name, @Nullable EntityType<?> type,
+    /** A mob (or shared group), the category it is listed under, and all of its sounds, by type. */
+    public record MobInfo(String id, Component name, @Nullable EntityType<?> type, MobGroup category,
                           Map<SoundType, List<SoundGroup>> groups, String searchText) {
         /** Sound event ids of one type, or of the whole mob when the type is null. */
         public List<Identifier> sounds(@Nullable SoundType soundType) {
@@ -174,7 +186,7 @@ public final class MobSounds {
 
     private static @Nullable Preview lastPreview;
 
-    /** Every mob that has at least one sound, A-Z in the game's language, followed by the shared groups. */
+    /** Every mob that has at least one sound, by category, A-Z in the game's language within each. */
     public static List<MobInfo> catalog() {
         SoundManager soundManager = Minecraft.getInstance().getSoundManager();
         Map<String, EnumMap<SoundType, List<Identifier>>> byMob = new HashMap<>();
@@ -208,10 +220,9 @@ public final class MobSounds {
                 list.forEach(g -> search.append(' ').append(g.name().getString()));
                 groups.put(soundType, List.copyOf(list));
             });
-            mobs.add(new MobInfo(id, name, type, groups, search.toString().toLowerCase(locale)));
+            mobs.add(new MobInfo(id, name, type, category(id), groups, search.toString().toLowerCase(locale)));
         });
-        mobs.sort(Comparator.comparing((MobInfo m) -> isGroup(m.id()))
-            .thenComparing(m -> m.name().getString(), collator));
+        mobs.sort(Comparator.comparing(MobInfo::category).thenComparing(m -> m.name().getString(), collator));
         return mobs;
     }
 

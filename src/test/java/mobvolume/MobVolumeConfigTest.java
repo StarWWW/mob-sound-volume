@@ -27,7 +27,7 @@ class MobVolumeConfigTest {
         MobVolumeConfig c = new MobVolumeConfig();
         assertEquals(100, c.volume(ZOMBIE));
         assertEquals(100, c.soundVolume(GROAN));
-        assertEquals(1.0f, c.factor(ZOMBIE, SoundType.HURT, HURT));
+        assertEquals(1.0f, c.factor(MobGroup.HOSTILE, ZOMBIE, SoundType.HURT, HURT));
         assertFalse(c.changed(ZOMBIE, ZOMBIE_SOUNDS));
     }
 
@@ -36,14 +36,14 @@ class MobVolumeConfigTest {
         MobVolumeConfig c = new MobVolumeConfig();
         c.setVolume(ZOMBIE, 50);
         c.setVolume(ZOMBIE, SoundType.HURT, 50);
-        assertEquals(0.25f, c.factor(ZOMBIE, SoundType.HURT, HURT), 1e-6);
-        assertEquals(0.5f, c.factor(ZOMBIE, SoundType.AMBIENT, GROAN), 1e-6);
+        assertEquals(0.25f, c.factor(MobGroup.HOSTILE, ZOMBIE, SoundType.HURT, HURT), 1e-6);
+        assertEquals(0.5f, c.factor(MobGroup.HOSTILE, ZOMBIE, SoundType.AMBIENT, GROAN), 1e-6);
         c.setSoundVolume(GROAN, 20);
-        assertEquals(0.1f, c.factor(ZOMBIE, SoundType.AMBIENT, GROAN), 1e-6);
+        assertEquals(0.1f, c.factor(MobGroup.HOSTILE, ZOMBIE, SoundType.AMBIENT, GROAN), 1e-6);
         c.setSoundVolume(GROAN, 0);
-        assertEquals(0.0f, c.factor(ZOMBIE, SoundType.AMBIENT, GROAN));
+        assertEquals(0.0f, c.factor(MobGroup.HOSTILE, ZOMBIE, SoundType.AMBIENT, GROAN));
         c.setVolume(ZOMBIE, 200);
-        assertEquals(1.0f, c.factor(ZOMBIE, SoundType.HURT, HURT), 1e-6);
+        assertEquals(1.0f, c.factor(MobGroup.HOSTILE, ZOMBIE, SoundType.HURT, HURT), 1e-6);
     }
 
     @Test
@@ -65,7 +65,7 @@ class MobVolumeConfigTest {
         MobVolumeConfig c = new MobVolumeConfig();
         c.setVolume(ZOMBIE, 0);
         c.enabled = false;
-        assertEquals(1.0f, c.factor(ZOMBIE, SoundType.AMBIENT, GROAN));
+        assertEquals(1.0f, c.factor(MobGroup.HOSTILE, ZOMBIE, SoundType.AMBIENT, GROAN));
     }
 
     @Test
@@ -92,6 +92,22 @@ class MobVolumeConfigTest {
     }
 
     @Test
+    void categoryVolumeAppliesToAllItsMobs() {
+        MobVolumeConfig c = new MobVolumeConfig();
+        c.setVolume(MobGroup.HOSTILE, 50);
+        c.setVolume(ZOMBIE, 50);
+        assertEquals(0.25f, c.factor(MobGroup.HOSTILE, ZOMBIE, SoundType.AMBIENT, GROAN), 1e-6);
+        assertEquals(1.0f, c.factor(MobGroup.ANIMAL, "minecraft:cow", SoundType.AMBIENT, "minecraft:entity.cow.ambient"));
+        c.setVolume(MobGroup.WATER, 0);
+        assertEquals(0.0f, c.factor(MobGroup.WATER, "minecraft:cod", SoundType.HURT, "minecraft:entity.cod.hurt"));
+        c.reset(MobGroup.HOSTILE);
+        assertEquals(100, c.volume(MobGroup.HOSTILE));
+        assertEquals(50, c.volume(ZOMBIE), "resetting the category leaves its mobs alone");
+        c.resetAll();
+        assertEquals(100, c.volume(MobGroup.WATER));
+    }
+
+    @Test
     void savesAndLoads(@TempDir Path dir) {
         MobVolumeConfig.testConfigDir = dir;
         MobVolumeConfig c = new MobVolumeConfig();
@@ -100,6 +116,7 @@ class MobVolumeConfigTest {
         c.setVolume(ZOMBIE, SoundType.HURT, 0);
         c.setVolume("mymod:dragonling", SoundType.STEP, 150);
         c.setSoundVolume(GROAN, 25);
+        c.setVolume(MobGroup.WATER, 30);
         c.save();
 
         MobVolumeConfig loaded = new MobVolumeConfig();
@@ -111,6 +128,8 @@ class MobVolumeConfigTest {
         assertEquals(150, loaded.volume("mymod:dragonling", SoundType.STEP));
         assertEquals(100, loaded.volume("mymod:dragonling"));
         assertEquals(25, loaded.soundVolume(GROAN));
+        assertEquals(30, loaded.volume(MobGroup.WATER));
+        assertEquals(100, loaded.volume(MobGroup.HOSTILE));
         assertEquals(100, loaded.soundVolume(HURT));
     }
 }

@@ -98,3 +98,23 @@ jar {
 		rename { "${it}_$projectName" }
 	}
 }
+
+// Every build also puts the jar into the shared builds/<minecraft version>/ folder next to the mod folders
+// (C:/.../mods/builds/26.2/...), replacing older builds of this mod there, so it always holds the newest jars.
+def buildsDir = file("../builds/${project.minecraft_version}")
+def modJar = tasks.named('jar').flatMap { it.archiveFile }
+def modName = base.archivesName.get()
+def copyToBuilds = tasks.register('copyToBuilds') {
+	group = 'build'
+	description = 'Copies the jar to ../builds/<minecraft version>/ and removes older builds of this mod there.'
+	inputs.file(modJar)
+	doLast {
+		buildsDir.mkdirs()
+		buildsDir.listFiles().findAll { it.name.startsWith("${modName}-") && it.name.endsWith('.jar') }*.delete()
+		def jarFile = modJar.get().asFile
+		java.nio.file.Files.copy(jarFile.toPath(), new File(buildsDir, jarFile.name).toPath(),
+			java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+		logger.lifecycle("Copied ${jarFile.name} to ${buildsDir}")
+	}
+}
+tasks.named('build') { finalizedBy copyToBuilds }

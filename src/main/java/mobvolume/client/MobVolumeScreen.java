@@ -1,5 +1,6 @@
 package mobvolume.client;
 
+import mobvolume.MobGroup;
 import mobvolume.MobSounds;
 import mobvolume.MobSounds.MobInfo;
 import mobvolume.MobSounds.SoundGroup;
@@ -26,6 +27,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -33,6 +35,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,6 +57,9 @@ public class MobVolumeScreen extends SettingsScreen {
         Identifier.fromNamespaceAndPath(MobVolumeMod.MOD_ID, "reset"),
         Identifier.fromNamespaceAndPath(MobVolumeMod.MOD_ID, "reset_disabled"),
         Identifier.fromNamespaceAndPath(MobVolumeMod.MOD_ID, "reset"));
+
+    /** Opened categories; remembered while the game runs. Closed at first, so the list starts as an overview. */
+    private static final Set<MobGroup> OPEN_CATEGORIES = EnumSet.noneOf(MobGroup.class);
 
     private final MobVolumeConfig config = MobVolumeConfig.get();
     private final Set<String> expandedMobs = new HashSet<>();
@@ -115,37 +121,37 @@ public class MobVolumeScreen extends SettingsScreen {
 
         Locale locale = MobSounds.gameLocale();
         String query = search == null ? "" : search.getValue().trim().toLowerCase(locale);
-        boolean showRecent = query.isEmpty() && !recent.isEmpty();
-        List<MobInfo> creatures = new ArrayList<>();
-        List<MobInfo> groups = new ArrayList<>();
-        for (MobInfo mob : mobs) {
-            if (showRecent && recentIds.contains(mob.id())) continue;
-            if (!query.isEmpty() && !mob.searchText().contains(query)) continue;
-            (MobSounds.isGroup(mob.id()) ? groups : creatures).add(mob);
-        }
-        if (showRecent) {
+        if (query.isEmpty() && !recent.isEmpty()) {
             list.header(Component.translatable("mobvolume.section.recent"));
-            recent.forEach(m -> addMob(list, m, query, locale));
-            if (!creatures.isEmpty()) list.header(Component.translatable("mobvolume.section.all"));
-        } else if (!creatures.isEmpty()) {
-            list.header(Component.translatable("mobvolume.section.all"));
+            recent.forEach(m -> addMob(list, "recent", m, query, locale));
         }
-        creatures.forEach(m -> addMob(list, m, query, locale));
-        if (!groups.isEmpty()) {
-            list.header(Component.translatable("mobvolume.section.shared"));
-            groups.forEach(m -> addMob(list, m, query, locale));
+
+        // one row per category; opened, or opened by itself when the search finds something in it
+        list.header(Component.translatable("mobvolume.section.categories"));
+        boolean found = false;
+        for (MobGroup group : MobGroup.values()) {
+            List<MobInfo> members = mobs.stream().filter(m -> m.category() == group).toList();
+            List<MobInfo> shown = query.isEmpty() ? members
+                : members.stream().filter(m -> m.searchText().contains(query)).toList();
+            if (shown.isEmpty()) continue;
+            found = true;
+            list.add(row("category/" + group.key, () -> new CategoryRow(group, members)));
+            if (!query.isEmpty() || OPEN_CATEGORIES.contains(group)) {
+                shown.forEach(m -> addMob(list, "category", m, query, locale));
+            }
         }
-        if (creatures.isEmpty() && groups.isEmpty() && (!showRecent || !query.isEmpty())) {
+        if (!found) {
             list.header(Component.translatable("mobvolume.screen.no_results"));
         }
     }
 
     /**
      * The mob, and when it is opened its kinds of sound and their sounds. A search that only matches some of the
-     * mob's sounds (e.g. "groan") shows those sounds right away.
+     * mob's sounds (e.g. "groan") shows those sounds right away. A mob can be listed twice (recently heard and in its
+     * category), so the rows are kept per section.
      */
-    private void addMob(SettingsList list, MobInfo mob, String query, Locale locale) {
-        list.add(row("mob/" + mob.id(), () -> new MobRow(mob)));
+    private void addMob(SettingsList list, String section, MobInfo mob, String query, Locale locale) {
+        list.add(row(section + "/mob/" + mob.id(), () -> new MobRow(mob)));
         boolean nameMatch = query.isEmpty() || mob.name().getString().toLowerCase(locale).contains(query)
             || mob.id().contains(query);
         boolean open = expandedMobs.contains(mob.id());
@@ -157,9 +163,10 @@ public class MobVolumeScreen extends SettingsScreen {
                 if (match || (open && expandedTypes.contains(typeKey))) shown.add(group);
             }
             if (!open && shown.isEmpty()) return;
-            list.add(row("type/" + typeKey, () -> new TypeRow(mob, type)));
+            list.add(row(section + "/type/" + typeKey, () -> new TypeRow(mob, type)));
             for (SoundGroup group : shown) {
-                list.add(row("sound/" + typeKey + "/" + group.name().getString(), () -> new SoundRow(mob, type, group)));
+                list.add(row(section + "/sound/" + typeKey + "/" + group.name().getString(),
+                    () -> new SoundRow(mob, type, group)));
             }
         });
     }
@@ -168,10 +175,13 @@ public class MobVolumeScreen extends SettingsScreen {
         return rows.computeIfAbsent(key, k -> create.get());
     }
 
-    /** A slider moved: update texts and buttons, and the sounds that are playing right now. */
+    /**
+     * A slider moved: update the sounds that are playing right now, and every row (texts, buttons, and the same
+     * mob's slider in the other section).
+     */
     private void afterChange() {
         MobSounds.refreshPlaying();
-        if (list != null) list.refreshAll();
+        if (list != null) list.children().forEach(SettingsList.Row::sync);
     }
 
     /** Something was reset: also move the sliders. */
@@ -232,6 +242,26 @@ public class MobVolumeScreen extends SettingsScreen {
         return stack;
     }
 
+    private static ItemStack categoryIcon(MobGroup group) {
+        String key = "category/" + group.key;
+        ItemStack cached = ICONS.get(key);
+        if (cached != null) return cached;
+        Item item = switch (group) {
+            case HOSTILE -> Items.ZOMBIE_HEAD;
+            case BOSS -> Items.DRAGON_HEAD;
+            case ANIMAL -> Items.COW_SPAWN_EGG;
+            case WATER -> Items.TROPICAL_FISH_BUCKET;
+            case VILLAGER -> Items.EMERALD;
+            case GOLEM -> Items.CARVED_PUMPKIN;
+            case OTHER -> Items.ARMOR_STAND;
+            case SHARED -> Items.NOTE_BLOCK;
+        };
+        if (!item.builtInRegistryHolder().areComponentsBound()) return ItemStack.EMPTY;
+        ItemStack stack = new ItemStack(item);
+        ICONS.put(key, stack);
+        return stack;
+    }
+
     private static @Nullable Item iconItem(MobInfo mob) {
         if (mob.id().equals(SoundClassifier.GENERIC)) return Items.NOTE_BLOCK;
         if (mob.id().equals(SoundClassifier.HOSTILE)) return Items.SKELETON_SKULL;
@@ -277,6 +307,125 @@ public class MobVolumeScreen extends SettingsScreen {
     }
 
     // ---------------------------------------------------------------- rows
+
+    /** [+] [icon] [Hostile mobs (44): 100%] [♪] [reset] - opens up into the mobs of the category. */
+    private final class CategoryRow extends SettingsList.Row {
+        private final MobGroup group;
+        private final List<MobInfo> members;
+        private final Button expand;
+        private final CategorySlider slider;
+        private final Button preview;
+        private final Button reset;
+
+        CategoryRow(MobGroup group, List<MobInfo> members) {
+            this.group = group;
+            this.members = members;
+            this.expand = smallButton("", Component.translatable("mobvolume.screen.expand_category"), b -> {
+                if (!OPEN_CATEGORIES.remove(group)) OPEN_CATEGORIES.add(group);
+                if (list != null) list.rebuild();
+            });
+            this.slider = new CategorySlider(group, members.size());
+            this.slider.setTooltip(Tooltip.create(Component.translatable("mobvolume.screen.category.tooltip")));
+            this.preview = smallButton("♪", Component.translatable("mobvolume.screen.preview"),
+                b -> members.get(RandomSource.create().nextInt(members.size())).previewMob());
+            this.reset = resetButton(b -> {
+                config.reset(group);
+                members.forEach(m -> config.reset(m.id(), m.soundKeys(null)));
+                afterReset();
+            });
+        }
+
+        private boolean changed() {
+            return config.volume(group) != MobVolumeConfig.DEFAULT
+                || members.stream().anyMatch(m -> config.changed(m.id(), m.soundKeys(null)));
+        }
+
+        @Override
+        public void refresh() {
+            expand.setMessage(Component.literal(OPEN_CATEGORIES.contains(group) ? "-" : "+"));
+            reset.active = changed();
+            slider.refreshMessage();
+        }
+
+        @Override
+        public void sync() {
+            slider.sync();
+            refresh();
+        }
+
+        @Override
+        public void extractContent(GuiGraphicsExtractor g, int mouseX, int mouseY, boolean hovered, float a) {
+            int x = getContentX();
+            int y = getContentY();
+            int right = getContentRight();
+            expand.setPosition(x, y);
+            expand.extractRenderState(g, mouseX, mouseY, a);
+            ItemStack icon = categoryIcon(group);
+            if (!icon.isEmpty()) g.item(icon, x + 24, y + 2);
+            slider.setPosition(x + 44, y);
+            slider.setWidth(right - 44 - (x + 44));
+            slider.extractRenderState(g, mouseX, mouseY, a);
+            preview.setPosition(right - 42, y);
+            preview.extractRenderState(g, mouseX, mouseY, a);
+            reset.setPosition(right - 20, y);
+            reset.extractRenderState(g, mouseX, mouseY, a);
+        }
+
+        @Override
+        public List<? extends GuiEventListener> children() {
+            return List.of(expand, slider, preview, reset);
+        }
+
+        @Override
+        public List<? extends NarratableEntry> narratables() {
+            return List.of(expand, slider, preview, reset);
+        }
+    }
+
+    /** 0% (off) to 200% for every mob of a category; the name is gold so the row reads as a heading. */
+    private final class CategorySlider extends AbstractSliderButton {
+        private final MobGroup group;
+        private final int count;
+
+        CategorySlider(MobGroup group, int count) {
+            super(0, 0, 200, 20, Component.empty(), 0);
+            this.group = group;
+            this.count = count;
+            sync();
+        }
+
+        private int percent() {
+            return (int) Math.round(this.value * MobVolumeConfig.MAX);
+        }
+
+        void sync() {
+            this.value = config.volume(group) / (double) MobVolumeConfig.MAX;
+            updateMessage();
+        }
+
+        void refreshMessage() {
+            updateMessage();
+        }
+
+        @Override
+        protected void updateMessage() {
+            int percent = percent();
+            MutableComponent text = Component.translatable("mobvolume.category." + group.key)
+                .withStyle(ChatFormatting.GOLD)
+                .append(Component.literal(" (" + count + ")").withStyle(ChatFormatting.GRAY))
+                .append(Component.literal(": ").withStyle(ChatFormatting.WHITE));
+            text.append(percent == 0
+                ? Component.translatable("mobvolume.screen.off").withStyle(ChatFormatting.RED)
+                : Component.translatable("mobvolume.screen.percent", percent).withStyle(ChatFormatting.WHITE));
+            setMessage(text);
+        }
+
+        @Override
+        protected void applyValue() {
+            config.setVolume(group, percent());
+            afterChange();
+        }
+    }
 
     /** [+] [egg] [Zombie: 50%] [♪] [reset] */
     private final class MobRow extends SettingsList.Row {
@@ -516,7 +665,7 @@ public class MobVolumeScreen extends SettingsScreen {
 
         /** What this actually plays at once the levels above it are applied. */
         private int effective(int percent) {
-            double f = percent / 100.0;
+            double f = percent / 100.0 * config.volume(mob.category()) / 100.0;
             if (type != null) f *= config.volume(mob.id()) / 100.0;
             if (group != null) f *= config.volume(mob.id(), type) / 100.0;
             return (int) Math.round(f * 100);
