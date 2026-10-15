@@ -1,5 +1,6 @@
 package mobvolume.client.ui;
 
+import mobvolume.compat.Compat;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
@@ -125,13 +126,13 @@ public abstract class SettingsScreen extends Screen {
     }
 
     private void confirmReset() {
-        this.minecraft.setScreen(new ConfirmScreen(yes -> {
+        Compat.setScreen(this.minecraft, new ConfirmScreen(yes -> {
             if (yes) {
                 reset();
                 save();
                 if (list != null) list.rebuild();
             }
-            this.minecraft.setScreen(this);
+            Compat.setScreen(this.minecraft, this);
         }, resetQuestion(), resetWarning()));
     }
 
@@ -143,6 +144,6 @@ public abstract class SettingsScreen extends Screen {
     @Override
     public void onClose() {
         afterClose();
-        this.minecraft.setScreen(parent);
+        Compat.setScreen(this.minecraft, parent);
     }
 }

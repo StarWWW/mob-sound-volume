@@ -2,7 +2,7 @@
 
 Her mobun sesini ayrı ayrı ayarla: tamamen kapalıdan (%0) iki kat yükseğe (%200) kadar. İstersen bir mobun ses türlerini ve her bir sesini de ayrı ayrı ayarlayabilirsin.
 
-*English: A client-side Fabric mod for Minecraft 26.1.2 that sets the volume of every mob separately (0–200%), with optional separate volumes for its idle, hurt, death, step and other sounds.*
+*English: A client-side Fabric mod for Minecraft 26.1.2 and 26.2 that sets the volume of every mob separately (0–200%), with optional separate volumes for its idle, hurt, death, step and other sounds.*
 
 ## Özellikler
 
@@ -39,8 +39,8 @@ Bazı moblar oyunun kendisinde başka bir mobun seslerini kullanır, bu yüzden 
 
 ## Gereksinimler
 
-- Minecraft 26.1.2, Fabric Loader 0.19+, Java 25
-- Fabric API 0.155.3+
+- Minecraft 26.1.2 (26.1.x) veya 26.2, Fabric Loader 0.19+, Java 25
+- Fabric API (26.1.2 için 0.155.3+, 26.2 için 0.161.0+)
 - İsteğe bağlı: Mod Menu
 
 ## Derleme
@@ -52,7 +52,17 @@ set JAVA_HOME=%APPDATA%\PrismLauncher\java\java-runtime-epsilon
 gradlew build
 ```
 
-Hazır jar `build/libs/` klasörüne çıkar (`-sources` olmayan dosya). `gradlew build` ayrıca `src/test` altındaki JUnit testlerini de çalıştırır.
+Bu Minecraft 26.1.2 jar'ını üretir. 26.2 için:
+
+```
+gradlew build -Pmc=26.2
+```
+
+Hazır jar'lar `build/libs/` klasörüne çıkar (`-sources` olmayan dosya), adında Minecraft sürümü yazar: `mobvolume-<sürüm>+26.1.2.jar` ve `mobvolume-<sürüm>+26.2.jar`. Oyununun sürümüne uyanı kur. `gradlew build` ayrıca `src/test` altındaki JUnit testlerini de çalıştırır.
+
+### Desteklenen Minecraft sürümleri
+
+Her sürümün bağımlılık sürümleri `versions/<minecraft>.properties` dosyasındadır (Fabric API, Mod Menu). Kodun neredeyse tamamı ortaktır; Minecraft sürümleri arasında farklı olan birkaç çağrı (26.2'de ekranların `Minecraft.gui` üzerinden açılması gibi) `src/mc26.1/java` ve `src/mc26.2/java` altındaki `Compat` sınıfındadır. Yeni bir Minecraft sürümü eklemek için oraya bir `versions/` dosyası ve gerekirse bir `Compat` kopyası eklenir.
 
 ## Proje yapısı
 
@@ -68,6 +78,8 @@ src/main/java/mobvolume/
   mixin/SoundEngineMixin.java    her mob sesinin seviyesini çarpar, kapalı sesleri başlatmaz
   mixin/ChannelMixin.java        %100 üstü için OpenAL kazanç sınırını kaldırır
   compat/ModMenuIntegration.java
+src/mc26.1/java, src/mc26.2/java   Minecraft sürümüne göre değişen birkaç çağrı (Compat)
+versions/                      her Minecraft sürümü için bağımlılık sürümleri
 src/main/resources/assets/mobvolume/lang/   19 dil dosyası (doğrudan düzenlenir)
 src/test/java/mobvolume/         JUnit testleri (ses tanıma, ayarlar, dil dosyaları)
 tools/MakeIcon.java              logoyu ve sıfırlama butonu simgesini üretir: java tools/MakeIcon.java

@@ -2,6 +2,36 @@ plugins {
 	id 'net.fabricmc.fabric-loom' version "${loom_version}"
 }
 
+// The Minecraft version comes from versions/<mc>.properties (default in gradle.properties): gradlew build -Pmc=26.2
+def mcVersion = providers.gradleProperty('mc').get()
+def versionFile = file("versions/${mcVersion}.properties")
+if (!versionFile.exists()) {
+	def known = file('versions').list().collect { it - '.properties' }.sort().join(', ')
+	throw new GradleException("No versions/${mcVersion}.properties. Known versions: ${known}")
+}
+def versionProps = new Properties()
+versionFile.withInputStream { versionProps.load(it) }
+versionProps.each { key, value -> project.ext.set(key, value) }
+version = "${project.mod_version}+${project.minecraft_version}"
+
+sourceSets {
+	main {
+		java {
+			// the few classes that differ between Minecraft versions
+			srcDir "src/${project.source_set}/java"
+		}
+	}
+}
+
+loom {
+	runs {
+		configureEach {
+			// a separate game folder per Minecraft version
+			runDir "run/${mcVersion}"
+		}
+	}
+}
+
 repositories {
 	// Mod Menu, from Modrinth's Maven
 	exclusiveContent {
@@ -39,6 +69,7 @@ processResources {
 	// the Fabric API version in fabric.mod.json is the one this mod is compiled against
 	def props = [
 		"version": project.version,
+		"minecraft_range": project.minecraft_range,
 		"fabric_api_version": project.fabric_api_version
 	]
 	inputs.properties props

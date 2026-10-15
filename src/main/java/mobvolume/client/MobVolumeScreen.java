@@ -9,6 +9,7 @@ import mobvolume.SoundClassifier;
 import mobvolume.SoundType;
 import mobvolume.client.ui.SettingsList;
 import mobvolume.client.ui.SettingsScreen;
+import mobvolume.compat.Compat;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
@@ -25,7 +26,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -74,7 +74,7 @@ public class MobVolumeScreen extends SettingsScreen {
         mobs = MobSounds.catalog();
         recent = mobs.stream()
             // your own steps would always put the player on top
-            .filter(m -> !MobSounds.isGroup(m.id()) && m.type() != EntityType.PLAYER)
+            .filter(m -> !MobSounds.isGroup(m.id()) && m.type() != Compat.PLAYER)
             .filter(m -> isRecent(MobSounds.heardAgo(m.id())))
             .sorted(Comparator.comparingLong(m -> MobSounds.heardAgo(m.id())))
             .toList();
@@ -235,8 +235,8 @@ public class MobVolumeScreen extends SettingsScreen {
     private static @Nullable Item iconItem(MobInfo mob) {
         if (mob.id().equals(SoundClassifier.GENERIC)) return Items.NOTE_BLOCK;
         if (mob.id().equals(SoundClassifier.HOSTILE)) return Items.SKELETON_SKULL;
-        if (mob.type() == EntityType.PLAYER) return Items.PLAYER_HEAD;
-        if (mob.type() == EntityType.ARMOR_STAND) return Items.ARMOR_STAND;
+        if (mob.type() == Compat.PLAYER) return Items.PLAYER_HEAD;
+        if (mob.type() == Compat.ARMOR_STAND) return Items.ARMOR_STAND;
         // "minecraft:zombie" -> "minecraft:zombie_spawn_egg", which modded mobs usually follow too
         Identifier egg = Identifier.tryParse(mob.id() + "_spawn_egg");
         return egg == null ? null : BuiltInRegistries.ITEM.getOptional(egg).orElse(null);

@@ -1,5 +1,6 @@
 package mobvolume;
 
+import mobvolume.compat.Compat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -150,7 +151,7 @@ public final class MobSounds {
 
         public SoundSource source() {
             if (id.equals(SoundClassifier.HOSTILE)) return SoundSource.HOSTILE;
-            if (type == EntityType.PLAYER) return SoundSource.PLAYERS;
+            if (type == Compat.PLAYER) return SoundSource.PLAYERS;
             return type != null && type.getCategory() == MobCategory.MONSTER ? SoundSource.HOSTILE : SoundSource.NEUTRAL;
         }
 

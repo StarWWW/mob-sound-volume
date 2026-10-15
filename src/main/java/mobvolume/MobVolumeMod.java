@@ -1,6 +1,7 @@
 package mobvolume;
 
 import mobvolume.client.MobVolumeScreen;
+import mobvolume.compat.Compat;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
@@ -35,7 +36,7 @@ public class MobVolumeMod implements ClientModInitializer {
         KeyMappingHelper.registerKeyMapping(SETTINGS_KEY);
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (SETTINGS_KEY.consumeClick()) {
-                client.setScreen(new MobVolumeScreen(client.screen));
+                Compat.setScreen(client, new MobVolumeScreen(Compat.screen(client)));
             }
         });
         // a "Mob Sounds..." button at the bottom of Options > Music & Sounds
@@ -45,7 +46,7 @@ public class MobVolumeMod implements ClientModInitializer {
                 // this also runs on resize, when the screen keeps its list
                 if (child instanceof OptionsList list && LISTS_WITH_BUTTON.add(list)) {
                     list.addSmall(Button.builder(Component.translatable("mobvolume.screen.open"),
-                            b -> client.setScreen(new MobVolumeScreen(screen)))
+                            b -> Compat.setScreen(client, new MobVolumeScreen(screen)))
                         .width(310)
                         .tooltip(Tooltip.create(Component.translatable("mobvolume.screen.open.tooltip")))
                         .build(), null);
