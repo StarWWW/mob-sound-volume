@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "mobvolume",
+  "version": "${version}",
+  "name": "Mob Sound Volume",
+  "description": "Set the volume of every mob separately, from silent to twice as loud: for the whole mob, for each kind of sound (idle, hurt, attacks, steps...) and for every single sound.",
+  "license": "MIT",
+  "authors": ["StarWWW"],
+  "contact": {
+    "homepage": "https://github.com/StarWWW/mob-sound-volume",
+    "sources": "https://github.com/StarWWW/mob-sound-volume",
+    "issues": "https://github.com/StarWWW/mob-sound-volume/issues"
+  },
+  "icon": "assets/mobvolume/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "mobvolume.MobVolumeMod"
+    ],
+    "modmenu": [
+      "mobvolume.compat.ModMenuIntegration"
+    ]
+  },
+  "mixins": [
+    "mobvolume.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "minecraft": "~26.1",
+    "java": ">=25",
+    "fabric-api": ">=${fabric_api_version}"
+  },
+  "suggests": {
+    "modmenu": "*"
+  }
+}
