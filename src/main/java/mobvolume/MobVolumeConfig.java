@@ -19,6 +19,7 @@ import java.util.Properties;
  * Volumes are percentages, 0 (silent) to {@link #MAX} (twice as loud), at four levels: a category of mobs, the
  * whole mob, one kind of sound of that mob, and one single sound. A sound plays at category x mob x type x sound,
  * so a zombie at 50% with its hurt sounds at 50% is hurt at 25%. Anything not in the file is at 100%.
+ * Each level is set and reset on its own: putting the zombie back to 100% keeps its hurt sounds at 50%.
  */
 public final class MobVolumeConfig {
     public static final int MAX = 200;
@@ -125,19 +126,6 @@ public final class MobVolumeConfig {
     /** Back to 100% for the category only (its mobs keep their own settings). */
     public void reset(MobGroup group) {
         groups.remove(group);
-    }
-
-    /** Back to 100% for the mob, all its kinds of sound and all its sounds. */
-    public void reset(String mob, Collection<String> mobSounds) {
-        mobs.remove(mob);
-        types.remove(mob);
-        mobSounds.forEach(sounds::remove);
-    }
-
-    /** Back to 100% for one kind of sound and each of its sounds. */
-    public void reset(String mob, SoundType type, Collection<String> typeSounds) {
-        setVolume(mob, type, DEFAULT);
-        typeSounds.forEach(sounds::remove);
     }
 
     public void resetAll() {

@@ -1,6 +1,7 @@
 package mobvolume;
 
 import mobvolume.compat.Compat;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
@@ -19,10 +20,12 @@ import org.jspecify.annotations.Nullable;
 
 import java.text.Collator;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -63,7 +66,7 @@ public final class MobSounds {
     public static MobGroup category(String mob) {
         return CATEGORIES.computeIfAbsent(mob, id -> {
             EntityType<?> type = isGroup(id) ? null : entityType(id);
-            return MobGroup.of(id, type == null ? null : type.getCategory().getName());
+            return MobGroup.of(id, type == null ? null : type.getCategory().getName(), ENTITIES.living(id));
         });
     }
 
@@ -132,27 +135,27 @@ public final class MobSounds {
     }
 
     public static boolean isGroup(String mob) {
-        return mob.equals(SoundClassifier.GENERIC) || mob.equals(SoundClassifier.HOSTILE);
+        return SoundClassifier.isGroup(mob);
     }
 
     /**
-     * One sound as the player knows it: every sound event with the same subtitle, e.g. the barks of all seven wolf
-     * variants are one "Wolf barks". Named by the game's own (translated) subtitle.
+     * One sound event, with its own volume. Named by the game's own (translated) subtitle; when several sounds of a
+     * mob share a subtitle (the seven wolf variants all "bark"), the sound's name is added so each can be told apart.
      */
-    public record SoundGroup(Component name, List<Identifier> ids) {
-        public List<String> keys() {
-            return ids.stream().map(Identifier::toString).toList();
+    public record Sound(Component name, Identifier id) {
+        public String key() {
+            return id.toString();
         }
     }
 
-    /** A mob (or shared group), the category it is listed under, and all of its sounds, by type. */
+    /** A mob (shared group, or thing), the category it is listed under, and every one of its sounds, by type. */
     public record MobInfo(String id, Component name, @Nullable EntityType<?> type, MobGroup category,
-                          Map<SoundType, List<SoundGroup>> groups, String searchText) {
+                          Map<SoundType, List<Sound>> byType, String searchText) {
         /** Sound event ids of one type, or of the whole mob when the type is null. */
         public List<Identifier> sounds(@Nullable SoundType soundType) {
             List<Identifier> out = new ArrayList<>();
-            groups.forEach((t, list) -> {
-                if (soundType == null || t == soundType) list.forEach(g -> out.addAll(g.ids()));
+            byType.forEach((t, list) -> {
+                if (soundType == null || t == soundType) list.forEach(sound -> out.add(sound.id()));
             });
             return out;
         }
@@ -186,7 +189,7 @@ public final class MobSounds {
 
     private static @Nullable Preview lastPreview;
 
-    /** Every mob that has at least one sound, by category, A-Z in the game's language within each. */
+    /** Every mob (or thing) that has at least one sound, by category, A-Z in the game's language within each. */
     public static List<MobInfo> catalog() {
         SoundManager soundManager = Minecraft.getInstance().getSoundManager();
         Map<String, EnumMap<SoundType, List<Identifier>>> byMob = new HashMap<>();
@@ -202,28 +205,99 @@ public final class MobSounds {
         List<MobInfo> mobs = new ArrayList<>();
         byMob.forEach((id, sounds) -> {
             EntityType<?> type = isGroup(id) ? null : entityType(id);
-            Component name = type != null
-                ? type.getDescription()
-                : Component.translatable("mobvolume.group." + id.substring(id.indexOf(':') + 1));
+            Component name = displayName(id, type);
             StringBuilder search = new StringBuilder(name.getString()).append(' ').append(id);
-            Map<SoundType, List<SoundGroup>> groups = new EnumMap<>(SoundType.class);
+            Map<SoundType, List<Sound>> byType = new EnumMap<>(SoundType.class);
             sounds.forEach((soundType, ids) -> {
-                // the same subtitle text is the same sound for the player
-                Map<String, SoundGroup> byName = new HashMap<>();
+                Map<String, List<Identifier>> bySubtitle = new HashMap<>();
+                for (Identifier sound : ids) {
+                    bySubtitle.computeIfAbsent(soundName(soundManager, sound).getString(), k -> new ArrayList<>()).add(sound);
+                }
+                Map<Identifier, String> variants = new HashMap<>();
+                bySubtitle.values().forEach(same -> {
+                    if (same.size() > 1) variants.putAll(variants(same));
+                });
+                List<Sound> list = new ArrayList<>();
                 for (Identifier sound : ids) {
                     Component label = soundName(soundManager, sound);
-                    byName.computeIfAbsent(label.getString(), k -> new SoundGroup(label, new ArrayList<>())).ids().add(sound);
+                    String variant = variants.getOrDefault(sound, "");
+                    if (!variant.isEmpty()) {
+                        // e.g. "Wolf barks (big)" next to the plain "Wolf barks"
+                        label = label.copy().append(Component.literal(" (" + variant + ")").withStyle(ChatFormatting.GRAY));
+                    }
+                    list.add(new Sound(label, sound));
                 }
-                List<SoundGroup> list = new ArrayList<>(byName.values());
-                list.forEach(g -> g.ids().sort(Comparator.comparing(Identifier::toString)));
-                list.sort(Comparator.comparing(g -> g.name().getString(), collator));
-                list.forEach(g -> search.append(' ').append(g.name().getString()));
-                groups.put(soundType, List.copyOf(list));
+                list.sort(Comparator.comparing((Sound sound) -> sound.name().getString(), collator)
+                    .thenComparing(sound -> sound.id().toString()));
+                list.forEach(sound -> search.append(' ').append(sound.name().getString()));
+                byType.put(soundType, List.copyOf(list));
             });
-            mobs.add(new MobInfo(id, name, type, category(id), groups, search.toString().toLowerCase(locale)));
+            mobs.add(new MobInfo(id, name, type, category(id), byType, search.toString().toLowerCase(locale)));
         });
         mobs.sort(Comparator.comparing(MobInfo::category).thenComparing(m -> m.name().getString(), collator));
         return mobs;
+    }
+
+    /**
+     * The entity's own name; for a shared group our own name ("Generic", "Fish"); for a sound name that matches no
+     * entity, the game's translation if there is one, otherwise the name made readable ("magic_missile" ->
+     * "Magic missile", with the mod's id added).
+     */
+    private static Component displayName(String id, @Nullable EntityType<?> type) {
+        if (type != null) return type.getDescription();
+        int colon = id.indexOf(':');
+        String namespace = id.substring(0, colon);
+        String path = id.substring(colon + 1);
+        if (isGroup(id)) return Component.translatable("mobvolume.group." + path);
+        String readable = Character.toUpperCase(path.charAt(0)) + path.substring(1).replace('_', ' ');
+        if (!namespace.equals("minecraft")) readable += " (" + namespace + ")";
+        return Component.translatableWithFallback("entity." + namespace + "." + path, readable);
+    }
+
+    /**
+     * What tells sounds with the same subtitle apart: the words of their names that they don't all share.
+     * Among the wolf barks "entity.wolf_big.ambient" is "big" and the plain "entity.wolf.ambient" is "". If that would
+     * leave two of them the same, each gets its whole name instead.
+     */
+    static Map<Identifier, String> variants(List<Identifier> same) {
+        List<String[]> all = new ArrayList<>();
+        for (Identifier id : same) all.add(words(id));
+        int shortest = Integer.MAX_VALUE;
+        for (String[] w : all) shortest = Math.min(shortest, w.length);
+        int prefix = 0;
+        while (prefix < shortest && sameWord(all, prefix, false)) prefix++;
+        int suffix = 0;
+        while (suffix < shortest - prefix && sameWord(all, suffix, true)) suffix++;
+        Map<Identifier, String> out = new HashMap<>();
+        for (int i = 0; i < same.size(); i++) {
+            String[] w = all.get(i);
+            out.put(same.get(i), String.join(" ", Arrays.copyOfRange(w, prefix, w.length - suffix)));
+        }
+        if (new HashSet<>(out.values()).size() < out.size()) {
+            for (int i = 0; i < same.size(); i++) out.put(same.get(i), String.join(" ", all.get(i)));
+        }
+        return out;
+    }
+
+    /** Whether every name has the same word at this position, counted from the start or from the end. */
+    private static boolean sameWord(List<String[]> all, int index, boolean fromEnd) {
+        String first = null;
+        for (String[] w : all) {
+            String word = fromEnd ? w[w.length - 1 - index] : w[index];
+            if (first == null) {
+                first = word;
+            } else if (!first.equals(word)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** "minecraft:entity.wolf_big.ambient" -> [wolf, big, ambient] */
+    private static String[] words(Identifier sound) {
+        String path = sound.getPath();
+        if (path.startsWith("entity.")) path = path.substring("entity.".length());
+        return path.split("[._]");
     }
 
     /** The sound's subtitle ("Zombie groans"), or for the few without one, its name ("loop"). */

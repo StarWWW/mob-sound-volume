@@ -1,17 +1,19 @@
 # Mob Sound Volume
 
-Her mobun sesini ayrı ayrı ayarla: tamamen kapalıdan (%0) iki kat yükseğe (%200) kadar. Moblar kategorilere ayrılmıştır (düşman, boss, hayvan, su canlısı...), bir kategorinin tamamını tek kaydırıcıyla ayarlayabilirsin. İstersen bir mobun ses türlerini ve her bir sesini de ayrı ayrı ayarlayabilirsin.
+Her mobun sesini ayrı ayrı ayarla: tamamen kapalıdan (%0) iki kat yükseğe (%200) kadar. Moblar kategorilere ayrılmıştır (düşman, boss, hayvan, su canlısı...), bir kategorinin tamamını tek kaydırıcıyla ayarlayabilirsin. İstersen bir mobun ses türlerini ve her bir sesini de ayrı ayrı ayarlayabilirsin. Oyundaki her varlık sesinin (`entity.*`, 26.3'te 929 ses) kendi ayarı vardır; tekne, maden arabası, ok gibi nesnelerin sesleri de dahil.
 
-*English: A client-side Fabric mod for Minecraft 26.1.2, 26.2 and 26.3 that sets the volume of every mob separately (0–200%). Mobs are sorted into categories (hostile, bosses, animals, water creatures...) that each have their own volume, and every mob's idle, hurt, death, step and other sounds can be set separately too.*
+*English: A client-side Fabric mod for Minecraft 26.1.2, 26.2 and 26.3 that sets the volume of every mob separately (0–200%). Mobs are sorted into categories (hostile, bosses, animals, water creatures, objects...) that each have their own volume, every mob's idle, hurt, death, step and other sounds can be set separately, and every single entity sound of the game has a slider of its own.*
 
 ## Özellikler
 
-- **Kategoriler:** Moblar sekiz kategoriye ayrılır: düşman yaratıklar, bosslar (Ender Ejderi, Wither, Warden, Yaşlı Gardiyan), hayvanlar, su canlıları, köylüler, golemler ve yardımcılar (Demir Golem, Kar Golemi, Bakır Golem, Allay), oyuncu ve diğerleri, birçok mobun ortak sesleri. Her kategorinin kendi kaydırıcısı vardır, ör. düşman yaratıklar %30 ise hepsi daha sessiz olur. Kategoriler kapalı başlar, yanındaki **+** düğmesi içindeki mobları açar. Modlu moblar oyunun kendi sınıflandırmasına göre (canavar, yaratık, su canlısı...) doğru kategoriye girer.
+- **Kategoriler:** Moblar dokuz kategoriye ayrılır: düşman yaratıklar, bosslar (Ender Ejderi, Wither, Warden, Yaşlı Gardiyan), hayvanlar, su canlıları, köylüler, golemler ve yardımcılar (Demir Golem, Kar Golemi, Bakır Golem, Allay), oyuncu ve diğerleri, nesneler (tekne, maden arabası, ok, eşya çerçevesi, tablo, havai fişek, TNT, şimşek, XP küresi...), birçok mobun ortak sesleri. Her kategorinin kendi kaydırıcısı vardır, ör. düşman yaratıklar %30 ise hepsi daha sessiz olur. Kategoriler kapalı başlar, yanındaki **+** düğmesi içindeki mobları biraz sağa girintili, kategoriye bir çizgiyle bağlı olarak açar. Modlu moblar oyunun kendi sınıflandırmasına göre (canavar, yaratık, su canlısı...) doğru kategoriye girer.
 - **Mob başına ses seviyesi:** Listedeki her mob için %0 (kapalı) ile %200 arası bir kaydırıcı.
 - **Ses türüne göre ayar:** Bir mobun yanındaki **+** düğmesiyle açılır: normal sesler, hasar, ölüm, adım, hareket (zıplama, yüzme, uçma...), saldırı, yeme-içme ve diğer.
-- **Her ses ayrı:** Bir türün yanındaki **+** o türdeki her sesi kendi kaydırıcısıyla gösterir. Sesler oyunun kendi altyazı adlarıyla yazılır ("Zombi inler", "Zırhçı çalışır"...); aynı altyazıya sahip sesler (ör. yedi kurt türünün havlaması) tek satırdır.
-- **Dört seviye çarpılır:** Gerçek ses seviyesi kategori × mob × tür × ses olarak hesaplanır ve her satırda gösterilir, ör. düşman yaratıklar %100, zombi %60, normal sesler %100 ve "Zombi inler" %25 ise inleme %15 çalar. Kategorinin sıfırlama düğmesi kategoriyi ve içindeki bütün mobları %100'e döndürür.
-- **Son duyulanlar:** Son 2 dakikada sesi gelen moblar listenin en üstünde ♪ işaretiyle durur. Rahatsız eden bir ses duyunca menüyü aç, mob en üstte.
+- **Her ses ayrı:** Bir türün yanındaki **+** o türdeki her sesi kendi kaydırıcısıyla gösterir; her ses olayı kendi satırıdır. Sesler oyunun kendi altyazı adlarıyla yazılır ("Zombi inler", "Zırhçı çalışır"...). Aynı altyazıya sahip sesler de ayrıdır ve aralarındaki fark yanına yazılır, ör. yedi kurt türünün havlamaları: sade olan, sonra "(angry)", "(big)", "(cute)"... ekli olanlar.
+- **Dört seviye çarpılır:** Gerçek ses seviyesi kategori × mob × tür × ses olarak hesaplanır ve her satırda gösterilir, ör. düşman yaratıklar %100, zombi %60, normal sesler %100 ve "Zombi inler" %25 ise inleme %15 çalar.
+- **Her seviye ayrı sıfırlanır:** Bir satırın sıfırlama düğmesi sadece o kaydırıcıyı %100'e döndürür. Mobu sıfırlamak türlerine ve seslerine, kategoriyi sıfırlamak içindeki moblara dokunmaz. Kendisinde ya da altında bir şey değiştirilmiş satırın adı sarı yazılır.
+- **Ayarlananlar (Configured):** Herhangi bir seviyesi değiştirilmiş her mob listenin başında ayrı bir bölümde durur, yaptığın ayarları tek yerde görürsün. Bölüm, liste yeniden kurulduğunda (ekranı açınca, arayınca, bir şeyi açıp kapatınca, sıfırlayınca) güncellenir; kaydırıcı sürüklenirken satırlar yer değiştirmesin diye o sırada güncellenmez.
+- **Son duyulanlar:** Son 2 dakikada sesi gelen moblar listenin en üstünde ♪ işaretiyle durur. Rahatsız eden bir ses duyunca menüyü aç, mob en üstte. Kendi adımların, eşya ve XP toplama seslerin burada gösterilmez.
 - **Sesi dinle (♪):** Her satırda ayarlanan seviyede bir örnek ses çalar. Yanındaki ok düğmesi o satırı %100'e döndürür.
 - **Canlı uygulama:** Kaydırıcıyı oynatırken çalmakta olan sesler de hemen değişir. Tuşla oyun içinde açıldığında tek oyunculu oyunu durdurmaz, etraftaki mobların sesinin değiştiğini duyabilirsin.
 - **Arama:** Mob adına, kimliğine (ör. `zombie`) veya ses adına göre arama. Arama sonuçları kategorilerinin altında açık gelir; ses adıyla aranınca (ör. "çalışır") eşleşen sesler de hemen açılır.
@@ -23,7 +25,7 @@ Her mobun sesini ayrı ayrı ayarla: tamamen kapalıdan (%0) iki kat yükseğe (
 
 ## Nasıl çalışıyor
 
-Sunucuda bir mob ses çıkardığında istemciye sadece sesin adı ve konumu gelir, sesi hangi mobun çıkardığı gelmez. Bu yüzden mod sesleri adlarından tanır: Minecraft mob seslerini `entity.<mob>.<ses>` diye adlandırır (`entity.zombie.ambient`, `entity.cow.hurt`...). Varyantlar ve yavrular da doğru moba gider (`entity.wolf_big.growl` → kurt, `entity.baby_cat.purr` → kedi). 26.1.2'deki tüm sesler denenerek 90 mob/grup bulundu.
+Sunucuda bir mob ses çıkardığında istemciye sadece sesin adı ve konumu gelir, sesi hangi mobun çıkardığı gelmez. Bu yüzden mod sesleri adlarından tanır: Minecraft varlık seslerini `entity.<varlık>.<ses>` diye adlandırır (`entity.zombie.ambient`, `entity.cow.hurt`...). Varyantlar ve yavrular da doğru moba gider (`entity.wolf_big.growl` → kurt, `entity.baby_cat.purr` → kedi). Adı hiçbir varlığa uymayan sesler de dışarıda kalmaz: tekneler artık ağaç türüne göre ayrı varlıklar olduğu için `entity.boat.*` "Tekneler (tüm türler)", bütün balıkların `entity.fish.swim` sesi "Balıklar (ortak)" girdisindedir, `entity.ender_eye.*` Ender Gözü'ne gider; modlardan gelen başka böyle adlar da kendi adlarıyla Nesneler'de listelenir. 26.3'teki 929 `entity.*` sesinin her biri tam bir kez listede, 116 mob/nesne/grup altında.
 
 Ses, oyunun kendi Ana Ses ve kategori (Düşman Yaratıklar, Dost Yaratıklar...) ayarlarından **sonra** çarpılır, yani o ayarlarla birlikte çalışır.
 
@@ -34,9 +36,10 @@ Bazı moblar oyunun kendisinde başka bir mobun seslerini kullanır, bu yüzden 
 - Mağara örümceği → Örümcek sesleri
 - Gezgin tüccarın laması → Lama sesleri
 - Mooshroom'un normal sesleri → İnek sesleri
-- Balıkların yüzme sesi (`entity.fish.swim`) hiçbir moba ait değil
 
-"Birçok mobun ortak sesleri" kategorisindeki **Genel** (yeme, su, patlama...) ve **Düşman moblar (ortak)** grupları birçok mobun paylaştığı sesleri kapsar; bu sesler tek bir moba ait olmadığı için düşman yaratıklar veya hayvanlar kategorisinin ayarından etkilenmez.
+"Birçok mobun ortak sesleri" kategorisindeki **Genel** (yeme, su, patlama...), **Düşman moblar (ortak)** ve **Balıklar (ortak)** grupları birçok mobun paylaştığı sesleri kapsar; bu sesler tek bir moba ait olmadığı için düşman yaratıklar, hayvanlar veya su canlıları kategorisinin ayarından etkilenmez.
+
+Blok, müzik, hava ve arayüz sesleri varlık sesi değildir; onlar için oyunun kendi Müzik ve Sesler kaydırıcıları kullanılır. Çoğu mobun adım sesi de aslında üstünde yürüdüğü bloğun sesidir (`block.grass.step`), bu yüzden mob başına ayarlanamaz; kendi adım sesi olan moblarınki (`entity.zombie.step` gibi) ayarlanır.
 
 ## Gereksinimler
 
@@ -73,7 +76,7 @@ src/main/java/mobvolume/
   MobVolumeMod.java              giriş noktası, tuş ataması, Müzik ve Sesler menüsündeki düğme
   SoundClassifier.java           ses adından mobu ve ses türünü bulur (oyundan bağımsız, test edilebilir)
   SoundType.java                 ses türleri: normal, hasar, ölüm, adım, hareket, saldırı, yeme, diğer
-  MobGroup.java                  mob kategorileri (düşman, boss, hayvan, su canlısı...)
+  MobGroup.java                  kategoriler (düşman, boss, hayvan, su canlısı, nesne...)
   MobVolumeConfig.java           ayarlar (config/mobvolume.properties)
   MobSounds.java                 oyunun sesleri ile ayarları birleştirir, mob listesini çıkarır
   client/MobVolumeScreen.java    ayarlar ekranı (kategori > mob > tür > ses)
@@ -84,7 +87,7 @@ src/main/java/mobvolume/
 src/mc26.1/java, src/mc26.2/java   Minecraft sürümüne göre değişen birkaç çağrı (Compat)
 versions/                      her Minecraft sürümü için bağımlılık sürümleri
 src/main/resources/assets/mobvolume/lang/   19 dil dosyası (doğrudan düzenlenir)
-src/test/java/mobvolume/         JUnit testleri (ses tanıma, ayarlar, dil dosyaları)
+src/test/java/mobvolume/         JUnit testleri (ses tanıma, kategoriler, ses adları, ayarlar, dil dosyaları)
 tools/MakeIcon.java              logoyu ve sıfırlama butonu simgesini üretir: java tools/MakeIcon.java
 ```
 
@@ -92,7 +95,7 @@ Dil dosyalarına yazı eklerken `LangFilesTest` her dilin İngilizce ile aynı a
 
 ## Ayar dosyası
 
-`config/mobvolume.properties`, yüzde olarak. Sadece değiştirilenler yazılır, gerisi %100'dür. Kategori anahtarları: `hostile`, `boss`, `animal`, `water`, `villager`, `golem`, `other`, `shared`.
+`config/mobvolume.properties`, yüzde olarak. Sadece değiştirilenler yazılır, gerisi %100'dür. Kategori anahtarları: `hostile`, `boss`, `animal`, `water`, `villager`, `golem`, `other`, `object`, `shared`.
 
 ```
 enabled=true

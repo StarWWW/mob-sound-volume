@@ -69,25 +69,44 @@ class MobVolumeConfigTest {
     }
 
     @Test
-    void changedAndResetCoverEveryLevel() {
+    void changedCoversEveryLevel() {
         MobVolumeConfig c = new MobVolumeConfig();
         c.setSoundVolume(HURT, 30);
         assertTrue(c.changed(ZOMBIE, ZOMBIE_SOUNDS), "a single changed sound counts for the mob");
         assertTrue(c.changed(ZOMBIE, SoundType.HURT, List.of(HURT)));
         assertFalse(c.changed(ZOMBIE, SoundType.AMBIENT, List.of(GROAN)));
+        c.setSoundVolume(HURT, 100);
+        c.setVolume(ZOMBIE, SoundType.STEP, 70);
+        assertTrue(c.changed(ZOMBIE, ZOMBIE_SOUNDS), "a changed kind of sound counts for the mob");
+    }
 
-        c.setVolume(ZOMBIE, SoundType.HURT, 40);
-        c.reset(ZOMBIE, SoundType.HURT, List.of(HURT));
-        assertEquals(100, c.volume(ZOMBIE, SoundType.HURT));
-        assertEquals(100, c.soundVolume(HURT));
-
+    @Test
+    void eachLevelIsResetOnItsOwn() {
+        MobVolumeConfig c = new MobVolumeConfig();
+        c.setVolume(MobGroup.HOSTILE, 80);
         c.setVolume(ZOMBIE, 30);
-        c.setSoundVolume(GROAN, 10);
+        c.setVolume(ZOMBIE, SoundType.HURT, 40);
+        c.setSoundVolume(HURT, 20);
+
+        // the mob back to 100%: its kinds of sound and its sounds keep their settings
+        c.setVolume(ZOMBIE, MobVolumeConfig.DEFAULT);
+        assertEquals(100, c.volume(ZOMBIE));
+        assertEquals(40, c.volume(ZOMBIE, SoundType.HURT));
+        assertEquals(20, c.soundVolume(HURT));
+        assertTrue(c.changed(ZOMBIE, ZOMBIE_SOUNDS));
+
+        // the kind of sound back to 100%: the single sound keeps its setting
+        c.setVolume(ZOMBIE, SoundType.HURT, MobVolumeConfig.DEFAULT);
+        assertEquals(20, c.soundVolume(HURT));
+
+        // the category back to 100%: its mobs keep theirs
+        c.reset(MobGroup.HOSTILE);
+        assertEquals(100, c.volume(MobGroup.HOSTILE));
+        assertEquals(20, c.soundVolume(HURT));
+
         c.setSoundVolume("minecraft:entity.cow.ambient", 0);
-        c.reset(ZOMBIE, ZOMBIE_SOUNDS);
-        assertFalse(c.changed(ZOMBIE, ZOMBIE_SOUNDS));
-        assertEquals(0, c.soundVolume("minecraft:entity.cow.ambient"), "other mobs are left alone");
         c.resetAll();
+        assertFalse(c.changed(ZOMBIE, ZOMBIE_SOUNDS));
         assertEquals(100, c.soundVolume("minecraft:entity.cow.ambient"));
     }
 

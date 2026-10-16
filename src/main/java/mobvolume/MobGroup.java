@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * The categories the mob list is split into, each with its own volume. Mostly the game's own spawn category
  * ({@code MobCategory}), so modded mobs land in the right place by themselves, plus a few groups the game does
- * not have: bosses, villagers, golems.
+ * not have: bosses, villagers, golems, and objects (entities that are not alive).
  */
 public enum MobGroup {
     HOSTILE,
@@ -16,7 +16,9 @@ public enum MobGroup {
     VILLAGER,
     GOLEM,
     OTHER,
-    /** The sounds many mobs share ("minecraft:generic", "minecraft:hostile"). */
+    /** Entities that are not alive: boats, minecarts, arrows, item frames, fireworks, lightning... */
+    OBJECT,
+    /** The sounds many mobs share ("minecraft:generic", "minecraft:hostile", "minecraft:fish"). */
     SHARED;
 
     /** Name used in the config file and in translation keys. */
@@ -43,12 +45,15 @@ public enum MobGroup {
     /**
      * @param mob             entity id, e.g. "minecraft:zombie"
      * @param spawnCategory   the game's spawn category name ("monster", "creature", "water_ambient"...), or null
+     *                        when there is no such entity (a sound name that matches none)
+     * @param living          whether the entity is alive (a mob, an animal, the player) rather than a thing
      */
-    public static MobGroup of(String mob, String spawnCategory) {
-        if (mob.equals(SoundClassifier.GENERIC) || mob.equals(SoundClassifier.HOSTILE)) return SHARED;
+    public static MobGroup of(String mob, String spawnCategory, boolean living) {
+        if (mob.equals(SoundClassifier.BOAT)) return OBJECT;
+        if (SoundClassifier.isGroup(mob)) return SHARED;
         MobGroup special = SPECIAL.get(mob);
         if (special != null) return special;
-        if (spawnCategory == null) return OTHER;
+        if (spawnCategory == null || !living) return OBJECT;
         return switch (spawnCategory) {
             case "monster" -> HOSTILE;
             case "creature", "ambient" -> ANIMAL;

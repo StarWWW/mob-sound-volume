@@ -14,7 +14,7 @@ class SoundClassifierTest {
         "minecraft:parrot", "minecraft:villager", "minecraft:horse", "mymod:dragonling", "mymod:grizzly_bear");
     private static final Set<String> NOT_LIVING = Set.of(
         "minecraft:evoker_fangs", "minecraft:arrow", "minecraft:glow_item_frame", "minecraft:item_frame",
-        "minecraft:item", "minecraft:minecart", "mymod:crystal");
+        "minecraft:item", "minecraft:minecart", "minecraft:eye_of_ender", "mymod:crystal");
 
     private static final SoundClassifier.Entities ENTITIES = new SoundClassifier.Entities() {
         @Override
@@ -76,9 +76,9 @@ class SoundClassifierTest {
     @Test
     void exactIdBeatsShorterOne() {
         assertMatch("minecraft:entity.zombie_villager.ambient", "minecraft:zombie_villager", SoundType.AMBIENT);
-        // evoker fangs are not the evoker, and not a mob at all
-        assertNull(SoundClassifier.classify("minecraft:entity.evoker_fangs.attack", ENTITIES));
-        assertNull(SoundClassifier.classify("minecraft:entity.glow_item_frame.add_item", ENTITIES));
+        // evoker fangs are not the evoker
+        assertMatch("minecraft:entity.evoker_fangs.attack", "minecraft:evoker_fangs", SoundType.ATTACK);
+        assertMatch("minecraft:entity.glow_item_frame.add_item", "minecraft:glow_item_frame", SoundType.OTHER);
     }
 
     @Test
@@ -95,6 +95,7 @@ class SoundClassifierTest {
     void aliases() {
         assertMatch("minecraft:entity.puffer_fish.blow_up", "minecraft:pufferfish", SoundType.ATTACK);
         assertMatch("minecraft:entity.ghastling.ambient", "minecraft:happy_ghast", SoundType.AMBIENT);
+        assertMatch("minecraft:entity.ender_eye.launch", "minecraft:eye_of_ender", SoundType.OTHER);
     }
 
     @Test
@@ -102,23 +103,36 @@ class SoundClassifierTest {
         assertMatch("minecraft:entity.generic.explode", SoundClassifier.GENERIC, SoundType.ATTACK);
         assertMatch("minecraft:entity.generic.extinguish_fire", SoundClassifier.GENERIC, SoundType.OTHER);
         assertMatch("minecraft:entity.hostile.hurt", SoundClassifier.HOSTILE, SoundType.HURT);
+        // no single entity has these: every fish swims, every kind of boat paddles
+        assertMatch("minecraft:entity.fish.swim", SoundClassifier.FISH, SoundType.MOVE);
+        assertMatch("minecraft:entity.boat.paddle_water", SoundClassifier.BOAT, SoundType.MOVE);
     }
 
     @Test
-    void notMobSounds() {
-        assertNull(SoundClassifier.classify("minecraft:entity.arrow.hit", ENTITIES));
-        assertNull(SoundClassifier.classify("minecraft:entity.minecart.riding", ENTITIES));
-        assertNull(SoundClassifier.classify("minecraft:entity.item.pickup", ENTITIES));
-        assertNull(SoundClassifier.classify("minecraft:entity.unknown_thing.ambient", ENTITIES));
+    void thingsThatAreNotAlive() {
+        assertMatch("minecraft:entity.arrow.hit", "minecraft:arrow", SoundType.OTHER);
+        assertMatch("minecraft:entity.minecart.riding", "minecraft:minecart", SoundType.MOVE);
+        assertMatch("minecraft:entity.item.pickup", "minecraft:item", SoundType.OTHER);
+    }
+
+    @Test
+    void entitySoundsWithoutAnEntityGetTheirOwnEntry() {
+        assertMatch("minecraft:entity.unknown_thing.ambient", "minecraft:unknown_thing", SoundType.AMBIENT);
+        assertMatch("mymod:entity.magic_missile.launch", "mymod:magic_missile", SoundType.OTHER);
+    }
+
+    @Test
+    void notEntitySounds() {
         assertNull(SoundClassifier.classify("minecraft:block.stone.break", ENTITIES));
+        assertNull(SoundClassifier.classify("minecraft:music.game", ENTITIES));
         assertNull(SoundClassifier.classify("minecraft:entity.", ENTITIES));
     }
 
     @Test
     void moddedMobs() {
         assertMatch("mymod:entity.dragonling.ambient", "mymod:dragonling", SoundType.AMBIENT);
-        // another mod's sound for a vanilla mob name is not that mob
-        assertNull(SoundClassifier.classify("othermod:entity.zombie.ambient", ENTITIES));
+        // another mod's sound for a vanilla mob name is not that mob, but that mod's own entry
+        assertMatch("othermod:entity.zombie.ambient", "othermod:zombie", SoundType.AMBIENT);
     }
 
     @Test

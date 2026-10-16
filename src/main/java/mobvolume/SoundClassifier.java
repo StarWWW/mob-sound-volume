@@ -11,16 +11,25 @@ import java.util.Set;
  * or {@code minecraft:entity.wolf_big.hurt}. On a server the client only receives the sound and a position, never the
  * mob that made it, so the name is the only reliable way to tell. Mods that leave out the "entity." part
  * ({@code mymod:grizzly_bear_idle}) are recognised too.
+ * <p>
+ * Every {@code entity.} sound gets an entry, so each one can be set: mobs, things that are not alive (boats, minecarts,
+ * arrows, item frames...), a few shared groups, and names that match no entity at all (listed under their own name).
  */
 public final class SoundClassifier {
-    /** Sounds shared by many mobs, shown as their own entries. */
+    /** Sounds shared by many mobs (or things), shown as their own entries. */
     public static final String GENERIC = "minecraft:generic";
     public static final String HOSTILE = "minecraft:hostile";
+    /** {@code entity.fish.swim}: every kind of fish. */
+    public static final String FISH = "minecraft:fish";
+    /** {@code entity.boat.*}: boats are one entity per kind of wood, but share their sounds. */
+    public static final String BOAT = "minecraft:boat";
+    private static final Set<String> GROUPS = Set.of(GENERIC, HOSTILE, FISH, BOAT);
 
-    /** Vanilla sound names that don't match their mob's id. */
+    /** Vanilla sound names that don't match their entity's id. */
     private static final Map<String, String> ALIASES = Map.of(
         "minecraft:puffer_fish", "minecraft:pufferfish",
-        "minecraft:ghastling", "minecraft:happy_ghast"
+        "minecraft:ghastling", "minecraft:happy_ghast",
+        "minecraft:ender_eye", "minecraft:eye_of_ender"
     );
 
     /** Idle noises that are not literally called "ambient" (a purring cat, a panting wolf, a buzzing bee...). */
@@ -42,7 +51,12 @@ public final class SoundClassifier {
     private SoundClassifier() {
     }
 
-    /** @return the mob and sound type, or null when this is not a mob sound */
+    /** True for the shared groups, which are not one entity. */
+    public static boolean isGroup(String id) {
+        return GROUPS.contains(id);
+    }
+
+    /** @return the mob (or thing) and sound type, or null when this is not an entity sound */
     public static Match classify(String soundId, Entities entities) {
         int colon = soundId.indexOf(':');
         String namespace = colon < 0 ? "minecraft" : soundId.substring(0, colon);
@@ -58,16 +72,17 @@ public final class SoundClassifier {
         if (name.isEmpty()) return null;
 
         String mob = namespace + ":" + name;
-        if (mob.equals(GENERIC) || mob.equals(HOSTILE)) return new Match(mob, type(what));
+        if (GROUPS.contains(mob)) return new Match(mob, type(what));
         mob = ALIASES.getOrDefault(mob, mob);
         String found = findEntity(namespace, mob.substring(namespace.length() + 1), entities);
-        if (found == null || !entities.living(found)) return null;
-        return new Match(found, type(what));
+        // no such entity: still its own entry, under the name the sound uses
+        return new Match(found != null ? found : mob, type(what));
     }
 
     /**
      * Many mods name mob sounds without "entity.": "mymod:grizzly_bear_idle", "mymod:grizzly_bear.hurt",
      * "mymod:mob.grizzly_bear.death". The name must start with one of that mod's living entities, longest first.
+     * Only living ones, because without the "entity." part a name like "mymod:crystal_shatter" is a guess.
      */
     private static Match classifyModded(String namespace, String path, Entities entities) {
         if (path.startsWith("mob.")) path = path.substring("mob.".length());
