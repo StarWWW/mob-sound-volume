@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         # every file in versions/
-        mc: ['26.1.2', '26.2']
+        mc: ['26.1.2', '26.2', '26.3']
     runs-on: ubuntu-24.04
     steps:
       - name: checkout repository

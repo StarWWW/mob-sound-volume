@@ -2,7 +2,7 @@
 
 Her mobun sesini ayrı ayrı ayarla: tamamen kapalıdan (%0) iki kat yükseğe (%200) kadar. Moblar kategorilere ayrılmıştır (düşman, boss, hayvan, su canlısı...), bir kategorinin tamamını tek kaydırıcıyla ayarlayabilirsin. İstersen bir mobun ses türlerini ve her bir sesini de ayrı ayrı ayarlayabilirsin.
 
-*English: A client-side Fabric mod for Minecraft 26.1.2 and 26.2 that sets the volume of every mob separately (0–200%). Mobs are sorted into categories (hostile, bosses, animals, water creatures...) that each have their own volume, and every mob's idle, hurt, death, step and other sounds can be set separately too.*
+*English: A client-side Fabric mod for Minecraft 26.1.2, 26.2 and 26.3 that sets the volume of every mob separately (0–200%). Mobs are sorted into categories (hostile, bosses, animals, water creatures...) that each have their own volume, and every mob's idle, hurt, death, step and other sounds can be set separately too.*
 
 ## Özellikler
 
@@ -40,8 +40,8 @@ Bazı moblar oyunun kendisinde başka bir mobun seslerini kullanır, bu yüzden 
 
 ## Gereksinimler
 
-- Minecraft 26.1.2 (26.1.x) veya 26.2, Fabric Loader 0.19+, Java 25
-- Fabric API (26.1.2 için 0.155.3+, 26.2 için 0.161.0+)
+- Minecraft 26.1.2 (26.1.x), 26.2 veya 26.3, Fabric Loader 0.19+, Java 25
+- Fabric API (26.1.2 için 0.155.3+, 26.2 için 0.161.0+, 26.3 için 0.163.0+)
 - İsteğe bağlı: Mod Menu
 
 ## Derleme
@@ -53,17 +53,18 @@ set JAVA_HOME=%APPDATA%\PrismLauncher\java\java-runtime-epsilon
 gradlew build
 ```
 
-Bu Minecraft 26.1.2 jar'ını üretir. 26.2 için:
+Bu Minecraft 26.1.2 jar'ını üretir. 26.2 ve 26.3 için:
 
 ```
 gradlew build -Pmc=26.2
+gradlew build -Pmc=26.3
 ```
 
-Hazır jar'lar `build/libs/` klasörüne çıkar (`-sources` olmayan dosya), adında Minecraft sürümü yazar: `mobvolume-<sürüm>+26.1.2.jar` ve `mobvolume-<sürüm>+26.2.jar`. Oyununun sürümüne uyanı kur. Her derleme jar'ı ayrıca ana klasördeki `builds/<minecraft sürümü>/` klasörüne kopyalar ve oradaki eski sürümünü siler; ana klasördeki `build-all.bat` bütün modları her sürüm için tek seferde derler. `gradlew build` ayrıca `src/test` altındaki JUnit testlerini de çalıştırır.
+Hazır jar'lar `build/libs/` klasörüne çıkar (`-sources` olmayan dosya), adında Minecraft sürümü yazar: `mobvolume-<sürüm>+26.1.2.jar`, `mobvolume-<sürüm>+26.2.jar` ve `mobvolume-<sürüm>+26.3.jar`. Oyununun sürümüne uyanı kur. Her derleme jar'ı ayrıca ana klasördeki `builds/<minecraft sürümü>/` klasörüne kopyalar ve oradaki eski sürümünü siler; ana klasördeki `build-all.bat` bütün modları her sürüm için tek seferde derler. `gradlew build` ayrıca `src/test` altındaki JUnit testlerini de çalıştırır.
 
 ### Desteklenen Minecraft sürümleri
 
-Her sürümün bağımlılık sürümleri `versions/<minecraft>.properties` dosyasındadır (Fabric API, Mod Menu). Kodun neredeyse tamamı ortaktır; Minecraft sürümleri arasında farklı olan birkaç çağrı (26.2'de ekranların `Minecraft.gui` üzerinden açılması gibi) `src/mc26.1/java` ve `src/mc26.2/java` altındaki `Compat` sınıfındadır. Yeni bir Minecraft sürümü eklemek için oraya bir `versions/` dosyası ve gerekirse bir `Compat` kopyası eklenir.
+Her sürümün bağımlılık sürümleri `versions/<minecraft>.properties` dosyasındadır (Fabric API, Mod Menu). Kodun neredeyse tamamı ortaktır; Minecraft sürümleri arasında farklı olan birkaç çağrı (26.2'de ekranların `Minecraft.gui` üzerinden açılması gibi) `src/mc26.1/java` ve `src/mc26.2/java` altındaki `Compat` sınıfındadır. 26.3'ün ayrı bir klasörü yoktur, 26.2'nin kodunu kullanır (`versions/26.3.properties` içinde `source_set=mc26.2`). Boş tuş atamaları sabit `-1` yerine oyunun `InputConstants.UNKNOWN` değerini kullanır: 26.3'te klavye girişi SDL'e geçti ve "tuş yok" değeri 0 oldu, `-1` gerçek bir tuş sayılıp oyunu çökertiyordu. Yeni bir Minecraft sürümü eklemek için oraya bir `versions/` dosyası ve gerekirse bir `Compat` kopyası eklenir.
 
 ## Proje yapısı
 
