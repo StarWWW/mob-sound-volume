@@ -14,7 +14,7 @@ Her mobun sesini ayrı ayrı ayarla: tamamen kapalıdan (%0) iki kat yükseğe (
 - **Her seviye ayrı sıfırlanır:** Bir satırın sıfırlama düğmesi sadece o kaydırıcıyı %100'e döndürür. Mobu sıfırlamak türlerine ve seslerine, kategoriyi sıfırlamak içindeki moblara dokunmaz. Kendisinde ya da altında bir şey değiştirilmiş satırın adı sarı yazılır.
 - **Ayarlananlar (Configured):** Herhangi bir seviyesi değiştirilmiş her mob listenin başında ayrı bir bölümde durur, yaptığın ayarları tek yerde görürsün. Bölüm, liste yeniden kurulduğunda (ekranı açınca, arayınca, bir şeyi açıp kapatınca, sıfırlayınca) güncellenir; kaydırıcı sürüklenirken satırlar yer değiştirmesin diye o sırada güncellenmez.
 - **Son duyulanlar:** Son 2 dakikada sesi gelen moblar listenin en üstünde ♪ işaretiyle durur. Rahatsız eden bir ses duyunca menüyü aç, mob en üstte. Kendi adımların, eşya ve XP toplama seslerin burada gösterilmez.
-- **Sesi dinle (♪):** Her satırda ayarlanan seviyede bir örnek ses çalar. Yanındaki ok düğmesi o satırı %100'e döndürür.
+- **Sesi dinle (♪):** Her satırda ayarlanan seviyede bir örnek ses çalar; düğme tıklama sesi çıkarmaz, böylece dinlenen sesin üstüne binmez. Yanındaki ok düğmesi o satırı %100'e döndürür.
 - **Canlı uygulama:** Kaydırıcıyı oynatırken çalmakta olan sesler de hemen değişir. Tuşla oyun içinde açıldığında tek oyunculu oyunu durdurmaz, etraftaki mobların sesinin değiştiğini duyabilirsin.
 - **Arama:** Mob adına, kimliğine (ör. `zombie`) veya ses adına göre arama. Arama sonuçları kategorilerinin altında açık gelir; ses adıyla aranınca (ör. "çalışır") eşleşen sesler de hemen açılır.
 - **Kapalı mob altyazı göstermez:** %0'daki bir mobun sesi hiç başlatılmaz.

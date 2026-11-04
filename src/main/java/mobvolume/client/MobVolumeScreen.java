@@ -23,6 +23,7 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -354,6 +355,24 @@ public class MobVolumeScreen extends SettingsScreen {
         return Button.builder(Component.literal(label), onPress).size(20, 20).tooltip(Tooltip.create(tooltip)).build();
     }
 
+    /** The ♪ button. It makes no click sound, so the click does not play over the sound being previewed. */
+    private static Button previewButton(Button.OnPress onPress) {
+        Button button = new PreviewButton(onPress);
+        button.setTooltip(Tooltip.create(Component.translatable("mobvolume.screen.preview")));
+        return button;
+    }
+
+    private static final class PreviewButton extends Button.Plain {
+        PreviewButton(OnPress onPress) {
+            super(0, 0, 20, 20, Component.literal("♪"), onPress, DEFAULT_NARRATION);
+        }
+
+        /** Called for both a mouse click and Enter/Space; silent on purpose. */
+        @Override
+        public void playDownSound(SoundManager soundManager) {
+        }
+    }
+
     private static Button resetButton(Button.OnPress onPress) {
         return SpriteIconButton.builder(Component.translatable("mobvolume.screen.reset"), onPress, true)
             .sprite(RESET_SPRITES, 12, 12)
@@ -422,8 +441,7 @@ public class MobVolumeScreen extends SettingsScreen {
             });
             this.slider = new CategorySlider(group, members.size());
             this.slider.setTooltip(Tooltip.create(Component.translatable("mobvolume.screen.category.tooltip")));
-            this.preview = smallButton("♪", Component.translatable("mobvolume.screen.preview"),
-                b -> members.get(RandomSource.create().nextInt(members.size())).previewMob());
+            this.preview = previewButton(b -> members.get(RandomSource.create().nextInt(members.size())).previewMob());
             // the category's own volume only; its mobs keep theirs
             this.reset = resetButton(b -> {
                 config.reset(group);
@@ -534,7 +552,7 @@ public class MobVolumeScreen extends SettingsScreen {
             });
             this.slider = new VolumeSlider(mob, null, null);
             this.slider.setTooltip(Tooltip.create(Component.literal(mob.id()).withStyle(ChatFormatting.GRAY)));
-            this.preview = smallButton("♪", Component.translatable("mobvolume.screen.preview"), b -> mob.previewMob());
+            this.preview = previewButton(b -> mob.previewMob());
             // the mob's own volume only; its kinds of sound and its sounds keep theirs
             this.reset = resetButton(b -> {
                 config.setVolume(mob.id(), MobVolumeConfig.DEFAULT);
@@ -606,8 +624,7 @@ public class MobVolumeScreen extends SettingsScreen {
             this.slider = new VolumeSlider(mob, type, null);
             this.slider.setTooltip(Tooltip.create(listTooltip(
                 mob.byType().get(type).stream().map(sound -> sound.name().getString()).toList())));
-            this.preview = smallButton("♪", Component.translatable("mobvolume.screen.preview"),
-                b -> mob.preview(mob.sounds(type)));
+            this.preview = previewButton(b -> mob.preview(mob.sounds(type)));
             // this kind of sound only; its sounds keep their own volumes
             this.reset = resetButton(b -> {
                 config.setVolume(mob.id(), type, MobVolumeConfig.DEFAULT);
@@ -668,8 +685,7 @@ public class MobVolumeScreen extends SettingsScreen {
             this.sound = sound;
             this.slider = new VolumeSlider(mob, type, sound);
             this.slider.setTooltip(Tooltip.create(Component.literal(shortId(sound.id())).withStyle(ChatFormatting.GRAY)));
-            this.preview = smallButton("♪", Component.translatable("mobvolume.screen.preview"),
-                b -> mob.preview(List.of(sound.id())));
+            this.preview = previewButton(b -> mob.preview(List.of(sound.id())));
             this.reset = resetButton(b -> {
                 config.setSoundVolume(sound.key(), MobVolumeConfig.DEFAULT);
                 afterReset();
