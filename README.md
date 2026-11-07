@@ -88,7 +88,8 @@ src/mc26.1/java, src/mc26.2/java   Minecraft sürümüne göre değişen birkaç
 versions/                      her Minecraft sürümü için bağımlılık sürümleri
 src/main/resources/assets/mobvolume/lang/   19 dil dosyası (doğrudan düzenlenir)
 src/test/java/mobvolume/         JUnit testleri (ses tanıma, kategoriler, ses adları, ayarlar, dil dosyaları)
-tools/MakeIcon.java              logoyu ve sıfırlama butonu simgesini üretir: java tools/MakeIcon.java
+tools/MakeIcon.java              logoyu Minecraft'ın eşya tarzında üretir: java tools/MakeIcon.java
+tools/MakeSprites.java           sıfırlama butonu simgesini üretir: java tools/MakeSprites.java
 ```
 
 Dil dosyalarına yazı eklerken `LangFilesTest` her dilin İngilizce ile aynı anahtarlara sahip olduğunu ve yazılarda oyunun gösteremeyeceği bir `%` olmadığını kontrol eder (tek başına `%` yerine `%%` yazılır).
